@@ -4,97 +4,79 @@
  */
 package Sockets;
 
-import java.io.*;
-import java.net.*;
-import javax.swing.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JFrame;
 
-/**
- *
- * @author sandy
- */
 
 public class Servidor extends JFrame {
-    private JTextArea txtChat;
-
-    public Servidor() {
-        initComponents();
-        startServer();
-    }
-
-    private void initComponents() {
-        txtChat = new JTextArea();
-
-        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Servidor Chat");
-
-        JScrollPane jScrollPane1 = new JScrollPane();
-        jScrollPane1.setViewportView(txtChat);
-
-        GroupLayout layout = new GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
-        );
-
-        pack();
-    }
-
-    private void startServer() {
+    ServerSocket server;
+    Conexion cnx;
+    public void run(){
         try {
-            ServerSocket serverSocket = new ServerSocket(8080);
-            txtChat.append("Servidor iniciado. Esperando conexiones...\n");
-
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                txtChat.append("Cliente conectado desde: " + clientSocket.getInetAddress().getHostAddress() + "\n");
-
-                // Hilo para manejar la comunicación con el cliente
-                Thread clientThread = new Thread(new ClientHandler(clientSocket));
-                clientThread.start();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            
+            System.out.println("Iniciando server");
+            server = new ServerSocket(3000);
+            int i = 1;
+            System.out.println("Esperando conexion");
+            while((cnx = new Conexion(server.accept()))!=null){
+                System.out.println("# conexiones "+i++);
+                cnx.start();
+            };                        
+            
+        } catch (IOException ex) {
+            Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, ex);
+        }        
     }
-
-    class ClientHandler implements Runnable {
-        private Socket clientSocket;
-        private BufferedReader in;
-
-        public ClientHandler(Socket socket) {
-            this.clientSocket = socket;
-            try {
-                this.in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    
+    public static void main(String args[]){
+        Servidor srv = new Servidor();
+        srv.run();
+    }
+    
+    class Conexion extends Thread {
+        InputStream in;
+        OutputStream out;
+        DataInputStream dis;
+        DataOutputStream dos;
+        
+        Socket cliente;
+        
+        Conexion(Socket _socket){
+            this.cliente = _socket;
         }
-
+        
+        @Override
         public void run() {
+           System.out.println("Conexion recibida desde "+cliente.getInetAddress());
+
             try {
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    txtChat.append("Cliente: " + inputLine + "\n");
-                }
-                in.close();
-                clientSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+                this.in =  cliente.getInputStream();            
+                this.out = cliente.getOutputStream();
+
+                this.dis = new DataInputStream(this.in);
+                this.dos = new DataOutputStream(this.out);            
+
+                this.dos.writeUTF("Buen día, ¿cual es tu nombre?");
+
+                String respuesta = this.dis.readUTF();
+
+                System.out.println(respuesta);
+
+                this.dos.writeUTF("Mucho gusto "+respuesta+", Adios!");
+
+                cliente.close();
+            } catch (IOException ex) {
+                Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-    }
-
-    public static void main(String args[]) {
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new Servidor().setVisible(true);
-            }
-        });
-    }
+                      
+    }        
 }
