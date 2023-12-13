@@ -8,7 +8,6 @@ package reproductor;
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-import javazoom.jl.player.Player;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
