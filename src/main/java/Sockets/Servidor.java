@@ -4,79 +4,77 @@
  */
 package Sockets;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.JFrame;
-
+/**
+ *
+ * @author sandy
+ */
+import java.io.*;
+import java.net.*;
+import javax.swing.*;
 
 public class Servidor extends JFrame {
-    ServerSocket server;
-    Conexion cnx;
-    public void run(){
+    private ServerSocket servidor;
+    private Socket cliente;
+    private BufferedReader entrada;
+    private PrintWriter salida;
+    private JTextArea areaTexto;
+    private JTextField campoTexto;
+    private JButton btnEnviar;
+
+    public Servidor() {
+        setTitle("Servidor");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(400, 300);
+
+        areaTexto = new JTextArea();
+        JScrollPane scrollPane = new JScrollPane(areaTexto);
+        add(scrollPane);
+
+        campoTexto = new JTextField();
+        add(campoTexto, "South");
+
+        btnEnviar = new JButton("Enviar");
+        btnEnviar.addActionListener(e -> enviarMensaje());
+        add(btnEnviar, "East");
+
+        setVisible(true);
+
         try {
-            
-            System.out.println("Iniciando server");
-            server = new ServerSocket(3000);
-            int i = 1;
-            System.out.println("Esperando conexion");
-            while((cnx = new Conexion(server.accept()))!=null){
-                System.out.println("# conexiones "+i++);
-                cnx.start();
-            };                        
-            
-        } catch (IOException ex) {
-            Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, ex);
-        }        
-    }
-    
-    public static void main(String args[]){
-        Servidor srv = new Servidor();
-        srv.run();
-    }
-    
-    class Conexion extends Thread {
-        InputStream in;
-        OutputStream out;
-        DataInputStream dis;
-        DataOutputStream dos;
-        
-        Socket cliente;
-        
-        Conexion(Socket _socket){
-            this.cliente = _socket;
+            servidor = new ServerSocket(5000);
+            areaTexto.append("Servidor esperando conexiones...\n");
+
+            cliente = servidor.accept();
+            areaTexto.append("Cliente conectado\n");
+
+            entrada = new BufferedReader(new InputStreamReader(cliente.getInputStream()));
+            salida = new PrintWriter(cliente.getOutputStream(), true);
+
+            // Hilo para recibir mensajes del cliente
+            Thread thread = new Thread(() -> {
+                String mensaje;
+                try {
+                    while ((mensaje = entrada.readLine()) != null) {
+                        areaTexto.append("Cliente: " + mensaje + "\n");
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            });
+            thread.start();
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        
-        @Override
-        public void run() {
-           System.out.println("Conexion recibida desde "+cliente.getInetAddress());
+    }
 
-            try {
-                this.in =  cliente.getInputStream();            
-                this.out = cliente.getOutputStream();
+    private void enviarMensaje() {
+        String mensaje = campoTexto.getText();
+        salida.println(mensaje);
+        areaTexto.append("Servidor: " + mensaje + "\n");
+        campoTexto.setText("");
+    }
 
-                this.dis = new DataInputStream(this.in);
-                this.dos = new DataOutputStream(this.out);            
-
-                this.dos.writeUTF("Buen día, ¿cual es tu nombre?");
-
-                String respuesta = this.dis.readUTF();
-
-                System.out.println(respuesta);
-
-                this.dos.writeUTF("Mucho gusto "+respuesta+", Adios!");
-
-                cliente.close();
-            } catch (IOException ex) {
-                Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-                      
-    }        
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new Servidor());
+    }
 }
