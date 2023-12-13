@@ -4,65 +4,73 @@
  */
 package Sockets;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.IOException;
-import java.net.Socket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.Scanner;
-import javax.swing.JFrame;
-
+/**
+ *
+ * @author sandy
+ */
+import java.io.*;
+import java.net.*;
+import javax.swing.*;
 
 public class Cliente extends JFrame {
-    Socket cliente;
-    InputStream in;
-    OutputStream out;
-    DataInputStream dis;
-    DataOutputStream dos;
-    Scanner consola;
-        
-    public void run(){
-        
-        consola = new Scanner(System.in);
-        
+    private Socket servidor;
+    private BufferedReader entrada;
+    private PrintWriter salida;
+    private JTextArea areaTexto;
+    private JTextField campoTexto;
+    private JButton btnEnviar;
+
+    public Cliente(){
+        setTitle("Cliente");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(400, 300);
+
+        areaTexto = new JTextArea();
+        JScrollPane scrollPane = new JScrollPane(areaTexto);
+        add(scrollPane);
+
+        campoTexto = new JTextField();
+        add(campoTexto, "South");
+
+        btnEnviar = new JButton("Enviar");
+        btnEnviar.addActionListener(e -> enviarMensaje());
+        add(btnEnviar, "East");
+
+        setVisible(true);
+
         try {
-            
-            
-            System.out.println("Iniciando conexion con Server");
-            cliente = new Socket("127.0.0.1",3000);
-            
-            System.out.println("Conexion exitosa");
+            servidor = new Socket("localhost", 5000);
 
-            this.in =  cliente.getInputStream();
-            this.out = cliente.getOutputStream();
-            
-            this.dis = new DataInputStream(this.in);
-            this.dos = new DataOutputStream(this.out);
-                                  
-            String respuesta = this.dis.readUTF();           
-            System.out.println(respuesta);
-            
-            String nombre = consola.nextLine();
-            
-            this.dos.writeUTF(nombre);
-            
-            respuesta = this.dis.readUTF();
-            
-            System.out.println(respuesta);
+            entrada = new BufferedReader(new InputStreamReader(servidor.getInputStream()));
+            salida = new PrintWriter(servidor.getOutputStream(), true);
 
-            cliente.close();
-            
-        } catch (IOException ex) {
-            Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, ex);
-        }        
+            // Hilo para recibir mensajes del servidor
+            Thread thread = new Thread(() -> {
+                String mensaje;
+                try {
+                    while ((mensaje = entrada.readLine()) != null) {
+                        areaTexto.append("Servidor: " + mensaje + "\n");
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            });
+            thread.start();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-    
-    public static void main(String args[]){
-        Cliente srv = new Cliente();
-        srv.run();
+
+    private void enviarMensaje() {
+        String mensaje = campoTexto.getText();
+        salida.println(mensaje);
+        areaTexto.append("Cliente: " + mensaje + "\n");
+        campoTexto.setText("");
     }
-    
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new Cliente());
+    }
 }
+
