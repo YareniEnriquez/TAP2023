@@ -4,7 +4,12 @@
  */
 package reproductor;
 
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 import javazoom.jl.player.Player;
+
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -12,6 +17,12 @@ import javax.swing.JPanel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.FileInputStream;
+
+import javazoom.jl.player.Player;
+
+import javazoom.jl.player.Player;
+
+import javax.swing.JFrame;
 
 public class MP3Player extends JFrame {
     private Player player;
